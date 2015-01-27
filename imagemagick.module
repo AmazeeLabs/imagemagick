@@ -239,7 +239,7 @@ function image_imagemagick_rotate(stdClass $image, $degrees, $background = NULL)
   else {
     $background = strtr($background, array('0x' => '#'));
   }
-  $image->ops[] = '-background ' . escapeshellarg($background) . ' -rotate ' . (float) $degrees;
+  $image->ops[] = '-background ' . imagemagick_escapeshellarg($background) . ' -rotate ' . (float) $degrees;
   return TRUE;
 }
 
@@ -375,7 +375,7 @@ function _imagemagick_convert($source, $destination, $args) {
   $destination = drupal_realpath($destination);
   $destination_format = '';
 
-  $args['quality'] = '-quality ' . escapeshellarg(variable_get('imagemagick_quality', 75));
+  $args['quality'] = '-quality ' . imagemagick_escapeshellarg(variable_get('imagemagick_quality', 75));
 
   // Allow other modules to alter the ImageMagick command line parameters.
   $context = array(
@@ -403,15 +403,15 @@ function _imagemagick_convert($source, $destination, $args) {
   // @see http://www.graphicsmagick.org/GraphicsMagick.html
   if (variable_get('imagemagick_gm', 0)) {
     array_unshift($args, 'convert');
-    $args[] = escapeshellarg($source);
-    $args[] = escapeshellarg($destination_format);
+    $args[] = imagemagick_escapeshellarg($source);
+    $args[] = imagemagick_escapeshellarg($destination_format);
   }
   // ImageMagick arguments:
   // convert input [options] output
   // @see http://www.imagemagick.org/Usage/basics/#cmdline
   else {
-    array_unshift($args, escapeshellarg($source));
-    $args[] = escapeshellarg($destination_format);
+    array_unshift($args, imagemagick_escapeshellarg($source));
+    $args[] = imagemagick_escapeshellarg($destination_format);
   }
   $command_args = implode(' ', $args);
 
@@ -426,7 +426,7 @@ function _imagemagick_convert($source, $destination, $args) {
  *
  * @param $command_args
  *   A string containing arguments to pass to the convert command, which must
- *   have been passed through escapeshellarg() already.
+ *   have been passed through imagemagick_escapeshellarg() already.
  * @param &$output
  *   (optional) A variable to assign the shell stdout to, passed by reference.
  * @param &$error
@@ -463,7 +463,7 @@ function _imagemagick_convert_exec($command_args, &$output = NULL, &$error = NUL
     // @see http://us3.php.net/manual/en/function.exec.php#56599
     // Use /D to run the command from PHP's current working directory so the
     // file paths don't have to be absolute.
-    $convert_path = 'start "ImageMagick" /D ' . escapeshellarg($drupal_path) . ' /B ' . escapeshellarg($convert_path);
+    $convert_path = 'start "ImageMagick" /D ' . imagemagick_escapeshellarg($drupal_path) . ' /B ' . imagemagick_escapeshellarg($convert_path);
   }
   $command = $convert_path . ' ' . $command_args;
 
@@ -525,6 +525,21 @@ function _imagemagick_convert_exec($command_args, &$output = NULL, &$error = NUL
   }
   // The shell command could not be executed.
   return FALSE;
+}
+
+/**
+ * Wrapper to escapeshellargs that changes the locale to handle non-ASCII
+ * filenames.
+ *
+ * @see https://drupal.org/node/1502924 for imagemagick module issue,
+ *   https://drupal.org/node/1561214 for Drupal core issue.
+ */
+function imagemagick_escapeshellarg($arg) {
+  $old_locale = setlocale(LC_CTYPE, 0);
+  setlocale(LC_CTYPE, 'en_US.UTF-8');
+  $arg_escaped = escapeshellarg($arg);
+  setlocale(LC_CTYPE, $old_locale);
+  return $arg_escaped;
 }
 
 /**

@@ -65,14 +65,14 @@ function imagemagick_advanced_imagemagick_arguments_alter(&$args, $context) {
   // Apply color profile.
   if ($profile = variable_get('imagemagick_advanced_profile', '')) {
     if (file_exists($profile)) {
-      $args['profile'] = '-profile ' . escapeshellarg($profile);
+      $args['profile'] = '-profile ' . imagemagick_escapeshellarg($profile);
     }
   }
   // Or alternatively apply colorspace.
   elseif ($colorspace = variable_get('imagemagick_advanced_colorspace', 0)) {
     // Do not hi-jack desaturate effect.
     if (array_search('-colorspace GRAY', $args) === FALSE) {
-      $args['colorspace'] = '-colorspace ' . escapeshellarg($colorspace);
+      $args['colorspace'] = '-colorspace ' . imagemagick_escapeshellarg($colorspace);
     }
   }
 }
@@ -148,7 +148,7 @@ function image_imagemagick_sharpen(stdClass $image, $radius = 0.5, $sigma = 0.5,
  * @see image_watermark()
  */
 function image_imagemagick_watermark(stdClass $image, $watermark) {
-  $image->ops[] = drupal_realpath($watermark) . '-composite -set ' . escapeshellarg('option:compose:outside-overlay') . ' false';
+  $image->ops[] = drupal_realpath($watermark) . '-composite -set ' . imagemagick_escapeshellarg('option:compose:outside-overlay') . ' false';
   return TRUE;
 }
 
